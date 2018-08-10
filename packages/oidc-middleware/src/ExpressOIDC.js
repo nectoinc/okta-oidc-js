@@ -43,6 +43,7 @@ module.exports = class ExpressOIDC extends EventEmitter {
    * @param {string} [options.routes.callback.path=/authorization-code] Path where the callback middleware is hosted
    * @param {string} [options.routes.callback.defaultRedirect=/] Where to redirect if there is no returnTo path defined
    * @param {Function} [options.routes.callback.handler] This handles responses from the OpenId Connect callback
+   * @param {Function} [options.userinfoProfileParser] This function is passed the OpenID Connect tokens and Okta profile, and assigns the output to the userinfo property on the request. The default is to just expose the Okta profile.
    */
   constructor(options = {}) {
     super();
@@ -52,7 +53,8 @@ module.exports = class ExpressOIDC extends EventEmitter {
       client_id,
       client_secret,
       redirect_uri,
-      sessionKey
+      sessionKey,
+      userinfoProfileParser
     } = options;
 
     const missing = [];
@@ -78,7 +80,8 @@ module.exports = class ExpressOIDC extends EventEmitter {
         }
       },
       sessionKey: sessionKey || `oidc:${options.issuer}`,
-      maxClockSkew: 120
+      maxClockSkew: 120,
+      userinfoProfileParser: (tokens, user) => user
     }, options)
 
     const context = {
@@ -109,7 +112,7 @@ module.exports = class ExpressOIDC extends EventEmitter {
     oidcUtil.createClient(context)
     .then(client => {
       context.client = client;
-      oidcUtil.bootstrapPassportStrategy(context);
+      oidcUtil.bootstrapPassportStrategy(context, userinfoProfileParser);
       this.emit('ready');
     })
     .catch(err => this.emit('error', err));

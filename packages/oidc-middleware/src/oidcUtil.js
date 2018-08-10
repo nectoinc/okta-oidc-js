@@ -67,14 +67,15 @@ oidcUtil.createClient = context => {
   });
 }
 
-oidcUtil.bootstrapPassportStrategy = context => {
+oidcUtil.bootstrapPassportStrategy = (context, userinfoProfileParser) => {
   const oidcStrategy = new OpenIdClientStrategy({
     params: {
       scope: context.options.scope
     },
     sessionKey: context.options.sessionKey,
     client: context.client
-  }, (tokens, userinfo, done) => {
+  }, (tokens, user, done) => {
+    const userinfo = userinfoProfileParser(tokens, user);
     done(null, userinfo);
   });
 
